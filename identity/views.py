@@ -1,29 +1,33 @@
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-import json
 
 @csrf_exempt
 def login_view(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Invalid method'}, status=405)
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=400)
 
-    body = json.loads(request.body)
-    user = authenticate(username=body.get('email'), password=body.get('password'))
+    import json
+    data = json.loads(request.body)
+    user = authenticate(
+        request,
+        username=data.get("email"),
+        password=data.get("password"),
+    )
 
-    if not user:
-        return JsonResponse({'error': 'Invalid credentials'}, status=401)
+    if user is None:
+        return JsonResponse({"error": "Invalid credentials"}, status=401)
 
     login(request, user)
-    return JsonResponse({'message': 'Logged in'})
+    return JsonResponse({"message": "Logged in"})
 
 
-def public_info(request):
-    return JsonResponse({'status': 'public-ok'})
+def profile_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Not logged in"}, status=401)
 
+    return JsonResponse({
+        "email": request.user.email,
+        "id": request.user.id
+    })
 
-@login_required
-def user_profile(request):
-    user = request.user
-    return JsonResponse({'id': user.id, 'email': user.email})

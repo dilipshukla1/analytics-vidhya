@@ -122,6 +122,9 @@ CORS_ALLOWED_ORIGINS = [
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False  # True if using HTTPS
 CSRF_COOKIE_SECURE = False     # True if using HTTPS
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
 
 # -------------------------------
 # GRAPHQL

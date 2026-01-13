@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NewIdentity2 Frontend</title>
+  <title>Django Auth Demo</title>
 </head>
 <body>
+  <h1>Login</h1>
 
-<h2>NewIdentity2 Demo Frontend</h2>
+  <input id="email" placeholder="email" />
+  <input id="password" type="password" placeholder="password" />
 
-<h3>Login</h3>
-<input id="email" placeholder="email" />
-<input id="password" type="password" placeholder="password" />
-<button id="loginBtn">Login</button>
+  <br><br>
 
-<hr/>
+  <!-- 🔥 MUST BE type="button" -->
+  <button type="button" onclick="login()">Login</button>
+  <button type="button" onclick="profile()">Profile</button>
 
-<button id="publicBtn">Public API</button>
-<button id="profileBtn">User Profile API</button>
+  <pre id="out"></pre>
 
-<pre id="out"></pre>
-
-<script src="app.js"></script>
+  <!-- 🔥 JS MUST LOAD LAST -->
+  <script src="app.js"></script>
 </body>
 </html>
 

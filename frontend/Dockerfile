@@ -1,11 +1,9 @@
-# frontend/Dockerfile
-
 FROM nginx:alpine
 
-# Copy frontend HTML/JS files
+# Copy frontend files
 COPY . /usr/share/nginx/html
 
-# Overwrite default nginx.conf
+# Overwrite Nginx default config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
