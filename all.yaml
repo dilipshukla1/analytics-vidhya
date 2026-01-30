@@ -1,0 +1,128 @@
+# ==============================
+# Namespace
+# ==============================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: analytics
+---
+# ==============================
+# NGINX CONFIGMAP (fixed)
+# ==============================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx-config
+  namespace: analytics
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      root /usr/share/nginx/html;
+      index index.html;
+
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+
+      location /api/ {
+        proxy_pass http://backend-service:8000/api/;  # preserve /api prefix
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Cookie $http_cookie;  # forward cookies
+      }
+    }
+---
+# ==============================
+# BACKEND DEPLOYMENT
+# ==============================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-backend
+  namespace: analytics
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-backend
+  template:
+    metadata:
+      labels:
+        app: analytics-backend
+    spec:
+      containers:
+      - name: backend
+        image: dilipshukla1/analytics-backend:latest
+        ports:
+        - containerPort: 8000
+---
+# ==============================
+# BACKEND SERVICE
+# ==============================
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: analytics
+spec:
+  selector:
+    app: analytics-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+---
+# ==============================
+# FRONTEND DEPLOYMENT
+# ==============================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-frontend
+  namespace: analytics
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-frontend
+  template:
+    metadata:
+      labels:
+        app: analytics-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: dilipshukla1/analytics-frontend:latest
+        ports:
+        - containerPort: 80
+        command: ["nginx", "-g", "daemon off;"]
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: frontend-nginx-config
+---
+# ==============================
+# FRONTEND NLB SERVICE
+# ==============================
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-frontend-nlb
+  namespace: analytics
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+spec:
+  type: LoadBalancer
+  selector:
+    app: analytics-frontend
+  ports:
+  - port: 80
+    targetPort: 80
