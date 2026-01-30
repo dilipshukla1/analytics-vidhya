@@ -1,0 +1,63 @@
+helm repo add kedacore https://kedacore.github.io/charts
+helm repo update
+
+
+kubectl create namespace keda
+
+helm install keda kedacore/keda \
+  --namespace keda
+
+
+kubectl get pods -n keda
+
+
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: nginx-scaledobject
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: nginx-deploy   # Must match Deployment name
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  triggers:
+  - type: cpu
+    metadata:
+      type: Utilization
+      value: "50"   # Scale when CPU > 50%
+
+
+kubectl apply -f deploy.yaml
+
+scaledobject.yaml
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: nginx-scaledobject
+spec:
+  scaleTargetRef:
+    name: nginx-deploy
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  triggers:
+  - type: cpu
+    metadata:
+      type: Utilization
+      value: "50"
+
+
+kubectl apply -f scaledobject.yaml
+
+kubectl get scaledobjects
+kubectl describe scaledobject nginx-scaledobject
+kubectl get hpa
+
+
+kubectl exec -it deploy/nginx-deploy -- /bin/bash
+apt update && apt install -y stress
+stress --cpu 2
+
+
+kubectl get pods -w
+kubectl get hpa -w
